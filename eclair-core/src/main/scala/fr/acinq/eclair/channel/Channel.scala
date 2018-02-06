@@ -11,7 +11,7 @@ import fr.acinq.eclair.NodeParams.BITCOINJ
 import fr.acinq.eclair._
 import fr.acinq.eclair.blockchain._
 import fr.acinq.eclair.channel.Helpers.{Closing, Funding}
-import fr.acinq.eclair.crypto.{Generators, KeyManager, ShaChain, Sphinx}
+import fr.acinq.eclair.crypto.{Generators, LocalKeyManager, ShaChain, Sphinx}
 import fr.acinq.eclair.payment._
 import fr.acinq.eclair.router.Announcements
 import fr.acinq.eclair.transactions._
