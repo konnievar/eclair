@@ -3,6 +3,7 @@ package fr.acinq.eclair.crypto
 import fr.acinq.bitcoin.{BinaryData, Crypto, DeterministicWallet}
 import fr.acinq.bitcoin.Crypto.{Point, PublicKey, Scalar}
 import fr.acinq.bitcoin.DeterministicWallet.ExtendedPublicKey
+import fr.acinq.eclair.channel.HtlcProof
 import fr.acinq.eclair.transactions.Transactions.TransactionWithInputInfo
 
 trait KeyManager {
@@ -42,7 +43,7 @@ trait KeyManager {
     * @return a signature generated with a private key generated from the input keys's matching
     *         private key and the remote point.
     */
-  def sign(tx: TransactionWithInputInfo, publicKey: ExtendedPublicKey, remotePoint: Point): BinaryData
+  def sign(tx: TransactionWithInputInfo, publicKey: ExtendedPublicKey, remotePoint: Point, htlcProof: Option[HtlcProof] = None): BinaryData
 
   /**
     * Ths method is used to spend revoked transactions, with the corresponding revocation key

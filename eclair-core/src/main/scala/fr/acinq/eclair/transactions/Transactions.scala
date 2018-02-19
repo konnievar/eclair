@@ -28,7 +28,9 @@ object Transactions {
   }
 
   case class CommitTx(input: InputInfo, tx: Transaction) extends TransactionWithInputInfo
-  case class HtlcSuccessTx(input: InputInfo, tx: Transaction, paymentHash: BinaryData) extends TransactionWithInputInfo
+  case class HtlcSuccessTx(input: InputInfo, tx: Transaction, htlc: UpdateAddHtlc) extends TransactionWithInputInfo {
+    def paymentHash = htlc.paymentHash
+  }
   case class HtlcTimeoutTx(input: InputInfo, tx: Transaction) extends TransactionWithInputInfo
   case class ClaimHtlcSuccessTx(input: InputInfo, tx: Transaction) extends TransactionWithInputInfo
   case class ClaimHtlcTimeoutTx(input: InputInfo, tx: Transaction) extends TransactionWithInputInfo
@@ -215,7 +217,7 @@ object Transactions {
       version = 2,
       txIn = TxIn(input.outPoint, Array.emptyByteArray, 0) :: Nil,
       txOut = TxOut(amount, pay2wsh(toLocalDelayed(localRevocationPubkey, toLocalDelay, localDelayedPaymentPubkey))) :: Nil,
-      lockTime = 0), htlc.paymentHash)
+      lockTime = 0), htlc)
   }
 
   def makeHtlcTxs(commitTx: Transaction, localDustLimit: Satoshi, localRevocationPubkey: PublicKey, toLocalDelay: Int, localDelayedPaymentPubkey: PublicKey, localHtlcPubkey: PublicKey, remoteHtlcPubkey: PublicKey, spec: CommitmentSpec): (Seq[HtlcTimeoutTx], Seq[HtlcSuccessTx]) = {

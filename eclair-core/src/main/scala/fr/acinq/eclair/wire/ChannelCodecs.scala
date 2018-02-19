@@ -92,7 +92,7 @@ object ChannelCodecs extends Logging {
 
   val txWithInputInfoCodec: Codec[TransactionWithInputInfo] = discriminated[TransactionWithInputInfo].by(uint16)
     .typecase(0x01, (("inputInfo" | inputInfoCodec) :: ("tx" | txCodec)).as[CommitTx])
-    .typecase(0x02, (("inputInfo" | inputInfoCodec) :: ("tx" | txCodec) :: ("paymentHash" | binarydata(32))).as[HtlcSuccessTx])
+    .typecase(0x02, (("inputInfo" | inputInfoCodec) :: ("tx" | txCodec) :: ("htlc" | updateAddHtlcCodec)).as[HtlcSuccessTx])
     .typecase(0x03, (("inputInfo" | inputInfoCodec) :: ("tx" | txCodec)).as[HtlcTimeoutTx])
     .typecase(0x04, (("inputInfo" | inputInfoCodec) :: ("tx" | txCodec)).as[ClaimHtlcSuccessTx])
     .typecase(0x05, (("inputInfo" | inputInfoCodec) :: ("tx" | txCodec)).as[ClaimHtlcTimeoutTx])
@@ -140,11 +140,22 @@ object ChannelCodecs extends Logging {
       ("sentAfterLocalCommitIndex" | uint64) ::
       ("reSignAsap" | bool)).as[WaitingForRevocation]
 
+  val htlcProofCodec: Codec[HtlcProof] = (
+    ("channelNumber" | uint64) ::
+      ("commitIndex" | uint64) ::
+      ("commitTx" | (("inputInfo" | inputInfoCodec) :: ("tx" | txCodec)).as[CommitTx]) ::
+      ("htlcSuccessTx" | (("inputInfo" | inputInfoCodec) :: ("tx" | txCodec) :: ("htlc" | updateAddHtlcCodec)).as[HtlcSuccessTx]) ::
+      ("remoteSig" | varsizebinarydata) ::
+      ("remoteHtlcPoint" | point)
+    ).as[HtlcProof]
+
   val relayedCodec: Codec[Relayed] = (
     ("originChannelId" | binarydata(32)) ::
       ("originHtlcId" | int64) ::
       ("amountMsatIn" | uint64) ::
-      ("amountMsatOut" | uint64)).as[Relayed]
+      ("amountMsatOut" | uint64) ::
+      ("proof" | optional(bool, htlcProofCodec))
+    ).as[Relayed]
 
   val originCodec: Codec[Origin] = discriminated[Origin].by(uint16)
     .typecase(0x01, provide(Local(None)))

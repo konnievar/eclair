@@ -16,9 +16,12 @@ import scala.util.{Failure, Success}
 
 sealed trait Origin
 case class Local(sender: Option[ActorRef]) extends Origin // we don't persist reference to local actors
-case class Relayed(originChannelId: BinaryData, originHtlcId: Long, amountMsatIn: Long, amountMsatOut: Long) extends Origin
+case class Relayed(originChannelId: BinaryData, originHtlcId: Long, amountMsatIn: Long, amountMsatOut: Long, proof: Option[HtlcProof] = None) extends Origin
 
-case class ForwardAdd(add: UpdateAddHtlc)
+case class ForwardAdd(add: UpdateAddHtlcWithProof)
+object ForwardAdd {
+  def apply(add: UpdateAddHtlc): ForwardAdd = ForwardAdd(UpdateAddHtlcWithProof(add, None))
+}
 case class ForwardFulfill(fulfill: UpdateFulfillHtlc, to: Origin)
 case class ForwardFail(fail: UpdateFailHtlc, to: Origin)
 case class ForwardFailMalformed(fail: UpdateFailMalformedHtlc, to: Origin)
@@ -117,7 +120,7 @@ class Relayer(nodeParams: NodeParams, register: ActorRef, paymentHandler: ActorR
     case Status.Failure(AddHtlcFailed(_, _, error, Local(Some(sender)), _)) =>
       sender ! Status.Failure(error)
 
-    case Status.Failure(AddHtlcFailed(_, paymentHash, error, Relayed(originChannelId, originHtlcId, _, _), channelUpdate_opt)) =>
+    case Status.Failure(AddHtlcFailed(_, paymentHash, error, Relayed(originChannelId, originHtlcId, _, _, _), channelUpdate_opt)) =>
       val failure = (error, channelUpdate_opt) match {
         case (_: InsufficientFunds, Some(channelUpdate)) => TemporaryChannelFailure(channelUpdate)
         case (_: TooManyAcceptedHtlcs, Some(channelUpdate)) => TemporaryChannelFailure(channelUpdate)
@@ -133,7 +136,7 @@ class Relayer(nodeParams: NodeParams, register: ActorRef, paymentHandler: ActorR
     case ForwardFulfill(fulfill, Local(Some(sender))) =>
       sender ! fulfill
 
-    case ForwardFulfill(fulfill, Relayed(originChannelId, originHtlcId, amountMsatIn, amountMsatOut)) =>
+    case ForwardFulfill(fulfill, Relayed(originChannelId, originHtlcId, amountMsatIn, amountMsatOut, _)) =>
       val cmd = CMD_FULFILL_HTLC(originHtlcId, fulfill.paymentPreimage, commit = true)
       commandBuffer ! CommandBuffer.CommandSend(originChannelId, originHtlcId, cmd)
       context.system.eventStream.publish(PaymentRelayed(MilliSatoshi(amountMsatIn), MilliSatoshi(amountMsatOut), Crypto.sha256(fulfill.paymentPreimage)))
@@ -141,14 +144,14 @@ class Relayer(nodeParams: NodeParams, register: ActorRef, paymentHandler: ActorR
     case ForwardFail(fail, Local(Some(sender))) =>
       sender ! fail
 
-    case ForwardFail(fail, Relayed(originChannelId, originHtlcId, _, _)) =>
+    case ForwardFail(fail, Relayed(originChannelId, originHtlcId, _, _, _)) =>
       val cmd = CMD_FAIL_HTLC(originHtlcId, Left(fail.reason), commit = true)
       commandBuffer ! CommandBuffer.CommandSend(originChannelId, originHtlcId, cmd)
 
     case ForwardFailMalformed(fail, Local(Some(sender))) =>
       sender ! fail
 
-    case ForwardFailMalformed(fail, Relayed(originChannelId, originHtlcId, _, _)) =>
+    case ForwardFailMalformed(fail, Relayed(originChannelId, originHtlcId, _, _, _)) =>
       val cmd = CMD_FAIL_MALFORMED_HTLC(originHtlcId, fail.onionHash, fail.failureCode, commit = true)
       commandBuffer ! CommandBuffer.CommandSend(originChannelId, originHtlcId, cmd)
 

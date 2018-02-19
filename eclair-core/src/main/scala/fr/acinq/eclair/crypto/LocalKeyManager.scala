@@ -4,9 +4,11 @@ import com.google.common.cache.{CacheBuilder, CacheLoader, LoadingCache}
 import fr.acinq.bitcoin.Crypto.{Point, PublicKey, Scalar}
 import fr.acinq.bitcoin.DeterministicWallet.{derivePrivateKey, _}
 import fr.acinq.bitcoin.{BinaryData, Crypto, DeterministicWallet}
+import fr.acinq.eclair.channel.HtlcProof
 import fr.acinq.eclair.router.Announcements
 import fr.acinq.eclair.transactions.Transactions
 import fr.acinq.eclair.transactions.Transactions.TransactionWithInputInfo
+import grizzled.slf4j.Logging
 
 object LocalKeyManager {
   val nodeKeyPath = DeterministicWallet.hardened(46) :: DeterministicWallet.hardened(0) :: Nil
@@ -18,7 +20,7 @@ object LocalKeyManager {
   *
   * @param seed seed from which keys will be derived
   */
-class LocalKeyManager(seed: BinaryData) extends KeyManager {
+class LocalKeyManager(seed: BinaryData) extends KeyManager with Logging {
   private val master = DeterministicWallet.generate(seed)
 
   override val nodeKey = DeterministicWallet.derivePrivateKey(master, LocalKeyManager.nodeKeyPath)
@@ -85,7 +87,7 @@ class LocalKeyManager(seed: BinaryData) extends KeyManager {
     * @return a signature generated with a private key generated from the input keys's matching
     *         private key and the remote point.
     */
-  def sign(tx: TransactionWithInputInfo, publicKey: ExtendedPublicKey, remotePoint: Point): BinaryData = {
+  def sign(tx: TransactionWithInputInfo, publicKey: ExtendedPublicKey, remotePoint: Point, htlcProof: Option[HtlcProof] = None): BinaryData = {
     val privateKey = privateKeys.get(publicKey.path)
     val currentKey = Generators.derivePrivKey(privateKey.privateKey, remotePoint)
     Transactions.sign(tx, currentKey)

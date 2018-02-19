@@ -57,7 +57,7 @@ class RelayerSpec extends TestkitBaseClass {
 
     val fwd = register.expectMsgType[Register.ForwardShortId[CMD_ADD_HTLC]]
     assert(fwd.shortChannelId === channelUpdate_bc.shortChannelId)
-    assert(fwd.message.upstream_opt === Some(add_ab))
+    assert(fwd.message.upstream_opt.map(_.add) === Some(add_ab))
 
     sender.expectNoMsg(100 millis)
     paymentHandler.expectNoMsg(100 millis)
@@ -95,7 +95,7 @@ class RelayerSpec extends TestkitBaseClass {
 
     val fwd1 = register.expectMsgType[Register.ForwardShortId[CMD_ADD_HTLC]]
     assert(fwd1.shortChannelId === channelUpdate_bc.shortChannelId)
-    assert(fwd1.message.upstream_opt === Some(add_ab))
+    assert(fwd1.message.upstream_opt.map(_.add) === Some(add_ab))
 
     sender.send(relayer, Status.Failure(Register.ForwardShortIdFailure(fwd1)))
 
@@ -120,7 +120,7 @@ class RelayerSpec extends TestkitBaseClass {
 
     val fwd = register.expectMsgType[Register.ForwardShortId[CMD_ADD_HTLC]]
     assert(fwd.shortChannelId === channelUpdate_bc.shortChannelId)
-    assert(fwd.message.upstream_opt === Some(add_ab))
+    assert(fwd.message.upstream_opt.map(_.add) === Some(add_ab))
 
     sender.expectNoMsg(100 millis)
     paymentHandler.expectNoMsg(100 millis)
@@ -287,7 +287,7 @@ class RelayerSpec extends TestkitBaseClass {
 
     val fwd = register.expectMsgType[Register.ForwardShortId[CMD_ADD_HTLC]]
     assert(fwd.shortChannelId === channelUpdate_bc.shortChannelId)
-    assert(fwd.message.upstream_opt === Some(add_ab))
+    assert(fwd.message.upstream_opt.map(_.add) === Some(add_ab))
 
     sender.send(relayer, Status.Failure(AddHtlcFailed(channelId_bc, add_ab.paymentHash, new InsufficientFunds(channelId_bc, cmd.amountMsat, 100, 0, 0), Relayed(add_ab.channelId, add_ab.id, add_ab.amountMsat, cmd.amountMsat), Some(channelUpdate_bc))))
 
@@ -311,7 +311,7 @@ class RelayerSpec extends TestkitBaseClass {
 
     val fwd = register.expectMsgType[Register.ForwardShortId[CMD_ADD_HTLC]]
     assert(fwd.shortChannelId === channelUpdate_bc.shortChannelId)
-    assert(fwd.message.upstream_opt === Some(add_ab))
+    assert(fwd.message.upstream_opt.map(_.add) === Some(add_ab))
 
     sender.send(relayer, Status.Failure(AddHtlcFailed(channelId_bc, add_ab.paymentHash, new TooManyAcceptedHtlcs(channelId_bc, 30), Relayed(add_ab.channelId, add_ab.id, add_ab.amountMsat, cmd.amountMsat), Some(channelUpdate_bc))))
 
@@ -335,7 +335,7 @@ class RelayerSpec extends TestkitBaseClass {
 
     val fwd = register.expectMsgType[Register.ForwardShortId[CMD_ADD_HTLC]]
     assert(fwd.shortChannelId === channelUpdate_bc.shortChannelId)
-    assert(fwd.message.upstream_opt === Some(add_ab))
+    assert(fwd.message.upstream_opt.map(_.add) === Some(add_ab))
 
     sender.send(relayer, Status.Failure(AddHtlcFailed(channelId_bc, add_ab.paymentHash, new HtlcTimedout(channelId_bc), Relayed(add_ab.channelId, add_ab.id, add_ab.amountMsat, cmd.amountMsat), Some(channelUpdate_bc))))
 

@@ -609,7 +609,7 @@ class Channel(val nodeParams: NodeParams, wallet: EclairWallet, remoteNodeId: Pu
           d.commitments.remoteChanges.signed.collect {
             case htlc: UpdateAddHtlc =>
               log.debug(s"relaying $htlc")
-              relayer ! ForwardAdd(htlc)
+              relayer ! ForwardAdd(UpdateAddHtlcWithProof(htlc, d.commitments.htlcProof(htlc)))
           }
           log.debug(s"received a new rev, spec:\n${Commitments.specs2String(commitments1)}")
           if (Commitments.localHasChanges(commitments1) && d.commitments.remoteNextCommitInfo.left.map(_.reSignAsap) == Left(true)) {
@@ -1683,7 +1683,7 @@ class Channel(val nodeParams: NodeParams, wallet: EclairWallet, remoteNodeId: Pu
 
   def origin(c: CMD_ADD_HTLC): Origin = c.upstream_opt match {
     case None => Local(Some(sender))
-    case Some(u) => Relayed(u.channelId, u.id, u.amountMsat, c.amountMsat)
+    case Some(u) => Relayed(u.channelId, u.id, u.amountMsat, c.amountMsat, u.proof)
   }
 
   def store[T](d: T)(implicit tp: T <:< HasCommitments): T = {

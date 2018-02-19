@@ -78,7 +78,7 @@ class NormalStateSpec extends TestkitBaseClass with StateTestsHelperMethods {
       val sender = TestProbe()
       val h = BinaryData("42" * 32)
       val originHtlc = UpdateAddHtlc(channelId = "42" * 32, id = 5656, amountMsat = 50000000, expiry = 400144, paymentHash = h, onionRoutingPacket = "00" * 1254)
-      val cmd = CMD_ADD_HTLC(originHtlc.amountMsat - 10000, h, originHtlc.expiry - 7, upstream_opt = Some(originHtlc))
+      val cmd = CMD_ADD_HTLC(originHtlc.amountMsat - 10000, h, originHtlc.expiry - 7, upstream_opt = Some(UpdateAddHtlcWithProof(originHtlc, None)))
       sender.send(alice, cmd)
       sender.expectMsg("ok")
       val htlc = alice2bob.expectMsgType[UpdateAddHtlc]
